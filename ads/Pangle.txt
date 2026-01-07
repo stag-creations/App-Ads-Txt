@@ -1,0 +1,2 @@
+pangleglobal.com, 5004123, DIRECT
+pubmatic.com, 161490, RESELLER, 5d62403b186f2ace
