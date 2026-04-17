@@ -22,6 +22,7 @@ module.exports = {
     Pangle: "ads/Pangle.txt",
     Reklam: "ads/Reklam.txt",
     "DT Exchange": "ads/dt_exchange.txt",
-    Yandex: "ads/yandex.txt"
+    Yandex: "ads/yandex.txt",
+    Jungle: "ads/Jungle.txt"
   }
 };
