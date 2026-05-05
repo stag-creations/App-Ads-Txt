@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eCPM Strategy Calculator - Google Ad Manager</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --secondary: #34a853;
+            --accent: #fbbc04;
+            --danger: #ea4335;
+            --dark: #202124;
+            --gray-50: #f8f9fa;
+            --gray-100: #f1f3f4;
+            --gray-200: #e8eaed;
+            --gray-300: #dadce0;
+            --gray-600: #5f6368;
+            --gray-800: #3c4043;
+            --shadow-sm: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            --shadow-md: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+            --shadow-lg: 0 2px 6px 2px rgba(60,64,67,.3), 0 8px 16px 6px rgba(60,64,67,.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .upload-zone {
+            border: 3px dashed var(--gray-300);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            background: var(--gray-50);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--secondary);
+            background: #e8f5e9;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .upload-zone p {
+            color: var(--gray-600);
+            font-size: 1.1rem;
+        }
+
+        .upload-zone .btn {
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray-600);
+            color: white;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .config-item {
+            background: var(--gray-50);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid var(--gray-200);
+        }
+
+        .config-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--gray-800);
+        }
+
+        .config-item input,
+        .config-item select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .config-item input:focus,
+        .config-item select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .strategy-controls {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .strategy-controls h3 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .results-section {
+            margin-top: 3rem;
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card h4 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card .label {
+            font-size: 0.95rem;
+            opacity: 0.85;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        .country-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .country-india {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .country-indonesia {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .country-usa {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+
+        .format-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .format-rewarded {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .format-interstitial {
+            background: #bbdefb;
+            color: #1565c0;
+        }
+
+        .format-appopen {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        .format-banner {
+            background: #f8bbd0;
+            color: #c2185b;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .advanced-options {
+            background: var(--gray-50);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+            border: 2px solid var(--gray-200);
+        }
+
+        .advanced-options h3 {
+            margin-bottom: 1rem;
+            color: var(--gray-800);
+        }
+
+        .floor-strategy {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .strategy-option {
+            padding: 1rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .strategy-option:hover {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .strategy-option.selected {
+            border-color: var(--primary);
+            background: #e8f0fe;
+        }
+
+        .strategy-option input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+
+        .priority-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .priority-high {
+            background: #4caf50;
+        }
+
+        .priority-medium {
+            background: #ff9800;
+        }
+
+        .priority-low {
+            background: #f44336;
+        }
+
+        .filter-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 2px solid var(--gray-200);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .filter-item select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .performance-card {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .perf-metric {
+            background: rgba(255,255,255,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .perf-metric .label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .perf-metric .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .waterfall-section {
+            background: var(--gray-50);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+            border: 2px solid var(--gray-200);
+        }
+
+        .waterfall-upload {
+            border: 2px dashed var(--gray-300);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: white;
+            margin-bottom: 2rem;
+        }
+
+        .analysis-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .analysis-card.success {
+            border-left-color: #4caf50;
+        }
+
+        .analysis-card.warning {
+            border-left-color: #ff9800;
+        }
+
+        .analysis-card.danger {
+            border-left-color: #f44336;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .recommendation-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .recommendation-box h4 {
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendation-box ul {
+            margin-left: 1.5rem;
+            color: #856404;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--gray-600);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .comparison-table th {
+            background: var(--gray-100);
+            color: var(--gray-800);
+            font-size: 0.85rem;
+        }
+
+        .change-positive {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .change-negative {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .change-neutral {
+            color: var(--gray-600);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+
+            .tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 eCPM Strategy Calculator</h1>
+            <p>Intelligent Google Ad Manager Floor Optimization Tool</p>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header">
+                <h2>Upload Your Mediation Data</h2>
+                <p>Upload your Google Bidding CSV to generate optimized eCPM floor strategies</p>
+            </div>
+
+            <div class="card-body">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📁</div>
+                    <p><strong>Drag & drop your CSV file here</strong></p>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">or</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        Browse Files
+                    </button>
+                    <input type="file" id="fileInput" accept=".csv" />
+                </div>
+
+                <div id="configSection" class="hidden">
+                    <!-- Filter Section -->
+                    <div class="filter-section">
+                        <h3>🔍 Filter & Analyze Current Performance</h3>
+                        <div class="filter-grid">
+                            <div class="filter-item">
+                                <label>Country</label>
+                                <select id="filterCountry" onchange="updateFilters()">
+                                    <option value="all">All Countries</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label>Ad Format</label>
+                                <select id="filterFormat" onchange="updateFilters()">
+                                    <option value="all">All Formats</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label style="opacity: 0;">Apply</label>
+                                <button class="btn btn-primary" onclick="applyFilters()" style="width: 100%;">
+                                    Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Performance Display -->
+                    <div id="performanceSection" class="hidden">
+                        <div class="performance-card">
+                            <h3>📊 Current Performance Analysis</h3>
+                            <div id="performanceMetrics" class="performance-grid"></div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-controls">
+                        <h3>🎯 Strategy Configuration</h3>
+                        <div class="config-grid">
+                            <div class="config-item">
+                                <label for="linesPerFormat">
+                                    Lines Per Format
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Number of eCPM floor lines to generate for each ad format</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="linesPerFormat" min="3" max="10" value="5" />
+                            </div>
+
+                            <div class="config-item">
+                                <label for="marginMultiplier">
+                                    Margin Multiplier (%)
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Percentage range above/below baseline eCPM</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="marginMultiplier" min="5" max="50" value="15" step="5" />
+                            </div>
+
+                            <div class="config-item">
+                                <label for="strategyType">Floor Strategy</label>
+                                <select id="strategyType">
+                                    <option value="balanced">Balanced (Volume + Revenue)</option>
+                                    <option value="aggressive">Aggressive (Max Revenue)</option>
+                                    <option value="conservative">Conservative (Max Fill)</option>
+                                    <option value="custom">Custom Distribution</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="advanced-options">
+                        <h3>⚙️ Advanced Options</h3>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.75rem; font-weight: 600;">
+                                <input type="checkbox" id="autoOptimize" checked />
+                                Auto-optimize based on fill rates
+                            </label>
+                            <label style="display: block; margin-bottom: 0.75rem; font-weight: 600;">
+                                <input type="checkbox" id="includeWinners" checked />
+                                Mark predicted winners
+                            </label>
+                            <label style="display: block; font-weight: 600;">
+                                <input type="checkbox" id="includeRevProjections" />
+                                Include revenue projections
+                            </label>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="namingConvention">Line Item Naming Convention</label>
+                            <select id="namingConvention">
+                                <option value="standard">Standard (IN-INT-1, IN-INT-2...)</option>
+                                <option value="descriptive">Descriptive (India_Interstitial_Premium...)</option>
+                                <option value="custom">Custom Prefix</option>
+                            </select>
+                        </div>
+
+                        <div class="config-item hidden" id="customPrefixDiv">
+                            <label for="customPrefix">Custom Prefix</label>
+                            <input type="text" id="customPrefix" placeholder="e.g., GAM_" />
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="generateStrategy()">
+                            🚀 Generate Strategy
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetForm()">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultsSection" class="results-section">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('strategy')">📊 Strategy</button>
+                        <button class="tab" onclick="switchTab('waterfall')">📈 Waterfall Analysis</button>
+                    </div>
+
+                    <div id="strategyTab" class="tab-content active">
+                        <div id="statsContainer"></div>
+                        <div id="tableContainer"></div>
+                        <div class="action-buttons">
+                            <button class="btn btn-success" onclick="exportToExcel()">
+                                📥 Download Excel
+                            </button>
+                            <button class="btn btn-primary" onclick="copyToClipboard()">
+                                📋 Copy to Clipboard
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="waterfallTab" class="tab-content">
+                        <div class="waterfall-section">
+                            <h3>📈 3-Day Waterfall Analysis</h3>
+                            <p style="color: var(--gray-600); margin-bottom: 1rem;">
+                                Upload your 3-day post-implementation data to analyze which lines are performing and get optimization recommendations.
+                            </p>
+
+                            <div class="waterfall-upload">
+                                <div class="upload-icon" style="font-size: 3rem;">📊</div>
+                                <p><strong>Upload 3-Day Performance CSV</strong></p>
+                                <button class="btn btn-primary" onclick="document.getElementById('waterfallInput').click()">
+                                    Browse Files
+                                </button>
+                                <input type="file" id="waterfallInput" accept=".csv" style="display: none;" />
+                                <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--gray-600);">
+                                    CSV should include: Line Item, Impressions, Revenue, Fill Rate, Win Rate
+                                </p>
+                            </div>
+
+                            <div id="waterfallResults" class="hidden">
+                                <h4 style="margin-bottom: 1rem;">Analysis Results</h4>
+                                <div id="waterfallAnalysis"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [];
+        let processedData = [];
+        let generatedLines = [];
+        let waterfallData = [];
+        let filteredData = [];
+        let currentFilters = { country: 'all', format: 'all' };
+
+        // File upload handlers
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const waterfallInput = document.getElementById('waterfallInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        waterfallInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleWaterfallFile(file);
+            }
+        });
+
+        // Strategy type change handler
+        document.getElementById('strategyType').addEventListener('change', (e) => {
+            // Could add dynamic UI changes based on strategy
+        });
+
+        document.getElementById('namingConvention').addEventListener('change', (e) => {
+            const customDiv = document.getElementById('customPrefixDiv');
+            if (e.target.value === 'custom') {
+                customDiv.classList.remove('hidden');
+            } else {
+                customDiv.classList.add('hidden');
+            }
+        });
+
+        function handleFile(file) {
+            Papa.parse(file, {
+                header: true,
+                complete: (results) => {
+                    rawData = results.data.filter(row => row.eCPM && parseFloat(row.eCPM) > 0);
+                    
+                    if (rawData.length > 0) {
+                        showAlert('success', `✅ Successfully loaded ${rawData.length} data rows!`);
+                        document.getElementById('configSection').classList.remove('hidden');
+                        processData();
+                        populateFilters();
+                    } else {
+                        showAlert('warning', '⚠️ No valid data found in CSV. Please check your file.');
+                    }
+                },
+                error: (error) => {
+                    showAlert('warning', `❌ Error parsing CSV: ${error.message}`);
+                }
+            });
+        }
+
+        function processData() {
+            processedData = rawData.map(row => ({
+                country: row.Country,
+                adType: row['Ad Type'],
+                ecpm: parseFloat(row.eCPM),
+                impressions: parseInt(row.Impressions),
+                revenue: parseFloat(row['Est. Revenue']),
+                fillRate: parseFloat(row['Fill Rate']),
+                winRate: parseFloat(row['Win Rate']) || 0,
+                attempts: parseInt(row.Attempts) || 0,
+                responses: parseInt(row.Responses) || 0
+            }));
+            filteredData = [...processedData];
+        }
+
+        function populateFilters() {
+            const countries = [...new Set(processedData.map(d => d.country))];
+            const formats = [...new Set(processedData.map(d => d.adType))];
+
+            const countrySelect = document.getElementById('filterCountry');
+            const formatSelect = document.getElementById('filterFormat');
+
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+
+            formats.forEach(format => {
+                const option = document.createElement('option');
+                option.value = format;
+                option.textContent = format;
+                formatSelect.appendChild(option);
+            });
+        }
+
+        function updateFilters() {
+            currentFilters.country = document.getElementById('filterCountry').value;
+            currentFilters.format = document.getElementById('filterFormat').value;
+        }
+
+        function applyFilters() {
+            updateFilters();
+            
+            filteredData = processedData.filter(item => {
+                const countryMatch = currentFilters.country === 'all' || item.country === currentFilters.country;
+                const formatMatch = currentFilters.format === 'all' || item.adType === currentFilters.format;
+                return countryMatch && formatMatch;
+            });
+
+            if (filteredData.length === 0) {
+                showAlert('warning', '⚠️ No data matches the selected filters.');
+                return;
+            }
+
+            displayPerformance();
+            document.getElementById('performanceSection').classList.remove('hidden');
+            showAlert('success', `✅ Filtered to ${filteredData.length} records`);
+        }
+
+        function displayPerformance() {
+            const totalImpressions = filteredData.reduce((sum, d) => sum + d.impressions, 0);
+            const totalRevenue = filteredData.reduce((sum, d) => sum + d.revenue, 0);
+            const avgEcpm = totalRevenue / totalImpressions * 1000;
+            const avgFillRate = filteredData.reduce((sum, d) => sum + d.fillRate, 0) / filteredData.length;
+            const avgWinRate = filteredData.reduce((sum, d) => sum + d.winRate, 0) / filteredData.filter(d => d.winRate > 0).length;
+
+            const filterText = currentFilters.country === 'all' && currentFilters.format === 'all' 
+                ? 'All Data' 
+                : `${currentFilters.country === 'all' ? 'All Countries' : currentFilters.country} - ${currentFilters.format === 'all' ? 'All Formats' : currentFilters.format}`;
+
+            const html = `
+                <div style="margin-bottom: 1rem;">
+                    <strong>Analyzing:</strong> ${filterText}
+                </div>
+                <div class="perf-metric">
+                    <div class="label">Total Impressions</div>
+                    <div class="value">${totalImpressions.toLocaleString()}</div>
+                </div>
+                <div class="perf-metric">
+                    <div class="label">Total Revenue</div>
+                    <div class="value">$${totalRevenue.toFixed(2)}</div>
+                </div>
+                <div class="perf-metric">
+                    <div class="label">Current eCPM</div>
+                    <div class="value">$${avgEcpm.toFixed(2)}</div>
+                </div>
+                <div class="perf-metric">
+                    <div class="label">Avg Fill Rate</div>
+                    <div class="value">${(avgFillRate * 100).toFixed(1)}%</div>
+                </div>
+                <div class="perf-metric">
+                    <div class="label">Avg Win Rate</div>
+                    <div class="value">${(avgWinRate * 100).toFixed(1)}%</div>
+                </div>
+            `;
+
+            document.getElementById('performanceMetrics').innerHTML = html;
+        }
+
+        function handleWaterfallFile(file) {
+            Papa.parse(file, {
+                header: true,
+                complete: (results) => {
+                    waterfallData = results.data.filter(row => row['Line Item'] || row['Line Item Name']);
+                    
+                    if (waterfallData.length > 0) {
+                        analyzeWaterfall();
+                        document.getElementById('waterfallResults').classList.remove('hidden');
+                        showAlert('success', `✅ Analyzing ${waterfallData.length} line items from waterfall data`);
+                    } else {
+                        showAlert('warning', '⚠️ No valid line items found in waterfall CSV.');
+                    }
+                },
+                error: (error) => {
+                    showAlert('warning', `❌ Error parsing waterfall CSV: ${error.message}`);
+                }
+            });
+        }
+
+        function analyzeWaterfall() {
+            const analysis = waterfallData.map(row => {
+                const lineItem = row['Line Item'] || row['Line Item Name'];
+                const impressions = parseInt(row.Impressions) || 0;
+                const revenue = parseFloat(row['Est. Revenue'] || row.Revenue) || 0;
+                const fillRate = parseFloat(row['Fill Rate']) || 0;
+                const winRate = parseFloat(row['Win Rate']) || 0;
+                const ecpm = impressions > 0 ? (revenue / impressions * 1000) : 0;
+
+                return {
+                    lineItem,
+                    impressions,
+                    revenue,
+                    fillRate,
+                    winRate,
+                    ecpm
+                };
+            });
+
+            // Sort by revenue to identify top performers
+            analysis.sort((a, b) => b.revenue - a.revenue);
+
+            const totalRevenue = analysis.reduce((sum, a) => sum + a.revenue, 0);
+            const totalImpressions = analysis.reduce((sum, a) => sum + a.impressions, 0);
+
+            // Categorize lines
+            const winners = [];
+            const underperformers = [];
+            const optimize = [];
+
+            let cumulativeRevenue = 0;
+            analysis.forEach((line, index) => {
+                cumulativeRevenue += line.revenue;
+                const revenueShare = (line.revenue / totalRevenue) * 100;
+                const impressionShare = (line.impressions / totalImpressions) * 100;
+
+                line.revenueShare = revenueShare;
+                line.impressionShare = impressionShare;
+
+                // Top 20% of revenue
+                if (cumulativeRevenue / totalRevenue <= 0.8 && revenueShare > 5) {
+                    winners.push(line);
+                } 
+                // Low performers (< 1% revenue share OR very low fill rate)
+                else if (revenueShare < 1 || line.fillRate < 0.05) {
+                    underperformers.push(line);
+                }
+                // Everything else
+                else {
+                    optimize.push(line);
+                }
+            });
+
+            displayWaterfallAnalysis(winners, underperformers, optimize, analysis);
+        }
+
+        function displayWaterfallAnalysis(winners, underperformers, optimize, allLines) {
+            let html = `
+                <div class="analysis-card success">
+                    <h4>✅ Top Performers (${winners.length} lines)</h4>
+                    <p>These lines are driving the majority of your revenue. Keep them running!</p>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Line Item</th>
+                                <th>Revenue</th>
+                                <th>Revenue Share</th>
+                                <th>eCPM</th>
+                                <th>Fill Rate</th>
+                                <th>Impressions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            winners.slice(0, 10).forEach(line => {
+                html += `
+                    <tr>
+                        <td><strong>${line.lineItem}</strong></td>
+                        <td>$${line.revenue.toFixed(2)}</td>
+                        <td><span class="change-positive">${line.revenueShare.toFixed(1)}%</span></td>
+                        <td>$${line.ecpm.toFixed(2)}</td>
+                        <td>${(line.fillRate * 100).toFixed(1)}%</td>
+                        <td>${line.impressions.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="analysis-card warning">
+                    <h4>⚠️ Lines to Optimize (${optimize.length} lines)</h4>
+                    <p>These lines have potential but could be improved with eCPM adjustments.</p>
+                    <div class="recommendation-box">
+                        <h4>💡 Recommendations:</h4>
+                        <ul>
+                            <li>Consider adjusting eCPM floors by ±10-15%</li>
+                            <li>Monitor fill rates closely - aim for 20-40%</li>
+                            <li>Test for another 3-5 days before making changes</li>
+                        </ul>
+                    </div>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Line Item</th>
+                                <th>Revenue</th>
+                                <th>Revenue Share</th>
+                                <th>eCPM</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            optimize.slice(0, 10).forEach(line => {
+                const status = line.fillRate > 0.5 ? 'Lower floor by 10%' : 
+                              line.fillRate < 0.15 ? 'Raise floor by 10%' : 'Monitor closely';
+                html += `
+                    <tr>
+                        <td>${line.lineItem}</td>
+                        <td>$${line.revenue.toFixed(2)}</td>
+                        <td>${line.revenueShare.toFixed(1)}%</td>
+                        <td>$${line.ecpm.toFixed(2)}</td>
+                        <td><span class="change-neutral">${status}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="analysis-card danger">
+                    <h4>❌ Underperformers (${underperformers.length} lines)</h4>
+                    <p>These lines are contributing minimal revenue. Consider pausing or aggressive optimization.</p>
+                    <div class="recommendation-box">
+                        <h4>💡 Recommendations:</h4>
+                        <ul>
+                            <li><strong>Pause lines with &lt;0.5% revenue share</strong></li>
+                            <li>For lines with decent impressions but low eCPM: lower floor by 20-30%</li>
+                            <li>For lines with very low fill: significantly lower floor or pause</li>
+                        </ul>
+                    </div>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Line Item</th>
+                                <th>Revenue</th>
+                                <th>Revenue Share</th>
+                                <th>Fill Rate</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            underperformers.slice(0, 15).forEach(line => {
+                const action = line.revenueShare < 0.5 ? '🛑 PAUSE' : 
+                              line.fillRate < 0.05 ? '⬇️ Lower 30%' : '⬇️ Lower 20%';
+                html += `
+                    <tr>
+                        <td>${line.lineItem}</td>
+                        <td>$${line.revenue.toFixed(2)}</td>
+                        <td><span class="change-negative">${line.revenueShare.toFixed(2)}%</span></td>
+                        <td>${(line.fillRate * 100).toFixed(1)}%</td>
+                        <td><strong>${action}</strong></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="analysis-card">
+                    <h4>📊 Overall Summary</h4>
+                    <div class="metric-row">
+                        <span>Total Lines Analyzed:</span>
+                        <strong>${allLines.length}</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Top Performers (Keep Running):</span>
+                        <strong class="change-positive">${winners.length} lines (${(winners.reduce((s,l) => s + l.revenueShare, 0)).toFixed(1)}% of revenue)</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Need Optimization:</span>
+                        <strong class="change-neutral">${optimize.length} lines</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Underperformers (Action Needed):</span>
+                        <strong class="change-negative">${underperformers.length} lines</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Estimated Revenue Impact if Optimized:</span>
+                        <strong class="change-positive">+15-25%</strong>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('waterfallAnalysis').innerHTML = html;
+        }
+
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            if (tab === 'strategy') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('strategyTab').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('waterfallTab').classList.add('active');
+            }
+        }
+
+        function generateStrategy() {
+            const linesPerFormat = parseInt(document.getElementById('linesPerFormat').value);
+            const marginMultiplier = parseInt(document.getElementById('marginMultiplier').value) / 100;
+            const strategyType = document.getElementById('strategyType').value;
+            const autoOptimize = document.getElementById('autoOptimize').checked;
+            const includeWinners = document.getElementById('includeWinners').checked;
+
+            // Use filtered data if filters are applied, otherwise use all data
+            const dataToUse = filteredData.length > 0 ? filteredData : processedData;
+
+            generatedLines = [];
+
+            // Group by country and ad type
+            const grouped = {};
+            dataToUse.forEach(item => {
+                const key = `${item.country}|${item.adType}`;
+                if (!grouped[key]) {
+                    grouped[key] = [];
+                }
+                grouped[key].push(item);
+            });
+
+            // Generate lines for each group
+            Object.keys(grouped).forEach(key => {
+                const [country, adType] = key.split('|');
+                const data = grouped[key][0];
+                
+                const lines = generateLinesForFormat(
+                    country, 
+                    adType, 
+                    data.ecpm, 
+                    linesPerFormat, 
+                    marginMultiplier,
+                    strategyType,
+                    data.fillRate,
+                    includeWinners
+                );
+                
+                generatedLines.push(...lines);
+            });
+
+            displayResults();
+        }
+
+        function generateLinesForFormat(country, adType, baseEcpm, count, margin, strategy, fillRate, markWinners) {
+            const lines = [];
+            const countryCode = getCountryCode(country);
+            const formatCode = getFormatCode(adType);
+            
+            // Calculate floor range based on strategy
+            let floors = [];
+            
+            if (strategy === 'balanced') {
+                const step = (baseEcpm * margin * 2) / (count - 1);
+                for (let i = 0; i < count; i++) {
+                    floors.push(baseEcpm - (baseEcpm * margin) + (step * i));
+                }
+            } else if (strategy === 'aggressive') {
+                const step = (baseEcpm * margin * 1.5) / (count - 1);
+                for (let i = 0; i < count; i++) {
+                    floors.push(baseEcpm + (step * i));
+                }
+            } else if (strategy === 'conservative') {
+                const step = (baseEcpm * margin) / (count - 1);
+                for (let i = 0; i < count; i++) {
+                    floors.push(baseEcpm - (baseEcpm * margin) + (step * i));
+                }
+            } else {
+                // Custom - same as balanced for now
+                const step = (baseEcpm * margin * 2) / (count - 1);
+                for (let i = 0; i < count; i++) {
+                    floors.push(baseEcpm - (baseEcpm * margin) + (step * i));
+                }
+            }
+
+            // Sort floors descending
+            floors.sort((a, b) => b - a);
+
+            const strategies = [
+                { emoji: '💎', name: 'Premium tier', fill: '15-25%', priority: 14 },
+                { emoji: '🎯', name: 'Above market', fill: '25-35%', priority: 13 },
+                { emoji: '⭐', name: 'Competitive', fill: '30-40%', priority: 12 },
+                { emoji: '📈', name: 'Volume builder', fill: '40-50%', priority: 11 },
+                { emoji: '🔥', name: 'Max volume', fill: '50-60%', priority: 10 }
+            ];
+
+            floors.forEach((floor, index) => {
+                const strat = strategies[index] || strategies[strategies.length - 1];
+                const isWinner = markWinners && index === Math.floor(count / 2);
+                
+                lines.push({
+                    lineItemName: `${countryCode}-${formatCode}-${index + 1}`,
+                    country: country,
+                    adFormat: adType,
+                    ecpmFloor: floor,
+                    priority: strat.priority,
+                    strategy: `${strat.emoji} ${strat.name}`,
+                    expectedFill: strat.fill,
+                    notes: isWinner ? 'WINNER - Best balance' : getStrategyNote(index, count),
+                    baseEcpm: baseEcpm
+                });
+            });
+
+            return lines;
+        }
+
+        function getCountryCode(country) {
+            const codes = {
+                'India': 'IN',
+                'Indonesia': 'ID',
+                'United States': 'US'
+            };
+            return codes[country] || country.substring(0, 2).toUpperCase();
+        }
+
+        function getFormatCode(format) {
+            const codes = {
+                'Rewarded': 'REW',
+                'Interstitial': 'INT',
+                'App Open': 'AO',
+                'Banner': 'BAN',
+                'MREC': 'MREC'
+            };
+            return codes[format] || format.substring(0, 3).toUpperCase();
+        }
+
+        function getStrategyNote(index, total) {
+            if (index === 0) return 'High quality demand';
+            if (index === total - 1) return 'Maximum impressions';
+            if (index === Math.floor(total / 2)) return 'Sweet spot';
+            return 'Optimized tier';
+        }
+
+        function displayResults() {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.classList.add('active');
+
+            // Display stats
+            displayStats();
+
+            // Display table
+            displayTable();
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displayStats() {
+            const totalLines = generatedLines.length;
+            const countries = [...new Set(generatedLines.map(l => l.country))];
+            const formats = [...new Set(generatedLines.map(l => l.adFormat))];
+            const avgFloor = generatedLines.reduce((sum, l) => sum + l.ecpmFloor, 0) / totalLines;
+
+            const statsHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Total Lines</h4>
+                        <div class="value">${totalLines}</div>
+                        <div class="label">Line Items Generated</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Countries</h4>
+                        <div class="value">${countries.length}</div>
+                        <div class="label">${countries.join(', ')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Ad Formats</h4>
+                        <div class="value">${formats.length}</div>
+                        <div class="label">${formats.join(', ')}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Avg eCPM Floor</h4>
+                        <div class="value">$${avgFloor.toFixed(2)}</div>
+                        <div class="label">Across All Lines</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('statsContainer').innerHTML = statsHTML;
+        }
+
+        function displayTable() {
+            let tableHTML = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Line Item</th>
+                                <th>Country</th>
+                                <th>Format</th>
+                                <th>eCPM Floor</th>
+                                <th>Priority</th>
+                                <th>Strategy</th>
+                                <th>Expected Fill</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            generatedLines.forEach(line => {
+                tableHTML += `
+                    <tr>
+                        <td><strong>${line.lineItemName}</strong></td>
+                        <td><span class="country-badge country-${line.country.toLowerCase().replace(' ', '')}">${line.country}</span></td>
+                        <td><span class="format-badge format-${line.adFormat.toLowerCase().replace(' ', '')}">${line.adFormat}</span></td>
+                        <td><strong>$${line.ecpmFloor.toFixed(2)}</strong></td>
+                        <td>${line.priority}</td>
+                        <td>${line.strategy}</td>
+                        <td>${line.expectedFill}</td>
+                        <td>${line.notes}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('tableContainer').innerHTML = tableHTML;
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+
+            // Summary sheet
+            const summaryData = [
+                ['eCPM Strategy Calculator - Export'],
+                ['Generated on: ' + new Date().toLocaleString()],
+                [],
+                ['Total Line Items:', generatedLines.length],
+                ['Countries:', [...new Set(generatedLines.map(l => l.country))].join(', ')],
+                ['Ad Formats:', [...new Set(generatedLines.map(l => l.adFormat))].join(', ')],
+                []
+            ];
+
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+
+            // All lines sheet
+            const headers = ['Line Item Name', 'Country', 'Ad Format', 'eCPM Floor ($)', 'Priority', 'Strategy', 'Expected Fill Rate', 'Notes'];
+            const data = generatedLines.map(line => [
+                line.lineItemName,
+                line.country,
+                line.adFormat,
+                line.ecpmFloor,
+                line.priority,
+                line.strategy,
+                line.expectedFill,
+                line.notes
+            ]);
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            XLSX.utils.book_append_sheet(wb, ws, 'All Lines');
+
+            // Country-specific sheets
+            const countries = [...new Set(generatedLines.map(l => l.country))];
+            countries.forEach(country => {
+                const countryLines = generatedLines.filter(l => l.country === country);
+                const countryData = countryLines.map(line => [
+                    line.lineItemName,
+                    line.country,
+                    line.adFormat,
+                    line.ecpmFloor,
+                    line.priority,
+                    line.strategy,
+                    line.expectedFill,
+                    line.notes
+                ]);
+                const countryWs = XLSX.utils.aoa_to_sheet([headers, ...countryData]);
+                XLSX.utils.book_append_sheet(wb, countryWs, country.substring(0, 30));
+            });
+
+            XLSX.writeFile(wb, `GAM_eCPM_Strategy_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showAlert('success', '✅ Excel file downloaded successfully!');
+        }
+
+        function copyToClipboard() {
+            let text = 'Line Item Name\tCountry\tAd Format\teCPM Floor\tPriority\tStrategy\tExpected Fill\tNotes\n';
+            
+            generatedLines.forEach(line => {
+                text += `${line.lineItemName}\t${line.country}\t${line.adFormat}\t$${line.ecpmFloor.toFixed(2)}\t${line.priority}\t${line.strategy}\t${line.expectedFill}\t${line.notes}\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('success', '✅ Data copied to clipboard!');
+            });
+        }
+
+        function resetForm() {
+            rawData = [];
+            processedData = [];
+            generatedLines = [];
+            document.getElementById('configSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+            showAlert('info', 'Form reset. Upload a new CSV to begin.');
+        }
+
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            
+            const cardBody = document.querySelector('.card-body');
+            cardBody.insertBefore(alertDiv, cardBody.firstChild);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
